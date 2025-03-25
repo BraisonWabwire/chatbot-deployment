@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #chatbox { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: scroll; }
+        #input { width: 80%; padding: 5px; }
+        button { padding: 5px 10px; }
+    </style>
+</head>
+<body>
+    <h1>Chatbot</h1>
+    <div id="chatbox"></div>
+    <input type="text" id="input" placeholder="Type your message...">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        function addMessage(message, isUser = false) {
+            const chatbox = document.getElementById('chatbox');
+            const msgDiv = document.createElement('div');
+            msgDiv.textContent = message;
+            msgDiv.style.color = isUser ? 'blue' : 'green';
+            chatbox.appendChild(msgDiv);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('input');
+            const message = input.value.trim();
+            if (message) {
+                addMessage(message, true);
+                input.value = '';
+
+                fetch('/get_response/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                })
+                .then(response => response.json())
+                .then(data => addMessage(data.response))
+                .catch(error => console.error('Error:', error));
+            }
+        }
+
+        document.getElementById('input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>
