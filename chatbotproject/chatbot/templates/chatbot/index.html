@@ -3,26 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot</title>
+    <title>MedBot - Your Medical Assistant</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        #chatbox { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: scroll; }
-        #input { width: 80%; padding: 5px; }
-        button { padding: 5px 10px; }
+        /* Custom styles for message bubbles */
+        .user-message {
+            background-color: #3b82f6; /* Blue */
+            color: white;
+            align-self: flex-end;
+        }
+        .bot-message {
+            background-color: #e5e7eb; /* Light gray */
+            color: #1f2937; /* Dark gray text */
+            align-self: flex-start;
+        }
+        .message {
+            max-width: 70%;
+            margin: 8px 0;
+            padding: 10px 15px;
+            border-radius: 12px;
+            word-wrap: break-word;
+        }
+        /* Scrollbar styling */
+        #chatbox::-webkit-scrollbar {
+            width: 8px;
+        }
+        #chatbox::-webkit-scrollbar-thumb {
+            background-color: #9ca3af;
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body>
-    <h1>Chatbot</h1>
-    <div id="chatbox"></div>
-    <input type="text" id="input" placeholder="Type your message...">
-    <button onclick="sendMessage()">Send</button>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-blue-600 text-white p-4 shadow-md">
+        <div class="container mx-auto flex items-center justify-between">
+            <h1 class="text-2xl font-semibold">MedBot</h1>
+            <p class="text-sm">Your AI Medical Assistant</p>
+        </div>
+    </header>
+
+    <!-- Chat Container -->
+    <main class="flex-grow container mx-auto p-4 flex flex-col max-w-3xl">
+        <div id="chatbox" class="flex-grow bg-white rounded-lg shadow-lg p-4 overflow-y-auto flex flex-col mb-4">
+            <!-- Messages will be appended here -->
+        </div>
+
+        <!-- Input Area -->
+        <div class="flex items-center space-x-2">
+            <input 
+                type="text" 
+                id="input" 
+                placeholder="Type your message..." 
+                class="flex-grow p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+            <button 
+                onclick="sendMessage()" 
+                class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition duration-200"
+            >
+                Send
+            </button>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-200 text-gray-600 p-2 text-center">
+        <p>&copy; 2025 MedBot. Developed by Braison Wabwire.</p>
+    </footer>
 
     <script>
         function addMessage(message, isUser = false) {
             const chatbox = document.getElementById('chatbox');
             const msgDiv = document.createElement('div');
             msgDiv.textContent = message;
-            msgDiv.style.color = isUser ? 'blue' : 'green';
+            msgDiv.classList.add('message');
+            msgDiv.classList.add(isUser ? 'user-message' : 'bot-message');
             chatbox.appendChild(msgDiv);
             chatbox.scrollTop = chatbox.scrollHeight;
         }
@@ -36,20 +92,48 @@
 
                 fetch('/get_response/', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken') // Include CSRF token for production
+                    },
                     body: JSON.stringify({ message: message })
                 })
                 .then(response => response.json())
                 .then(data => addMessage(data.response))
-                .catch(error => console.error('Error:', error));
+                .catch(error => {
+                    console.error('Error:', error);
+                    addMessage('Sorry, something went wrong. Please try again.', false);
+                });
             }
         }
 
+        // Get CSRF token from cookies
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Enable Enter key to send message
         document.getElementById('input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 sendMessage();
             }
         });
+
+        // Initial welcome message
+        window.onload = function() {
+            addMessage("Hello! I'm MedBot, your medical assistant. How can I help you today?", false);
+        };
     </script>
 </body>
 </html>
